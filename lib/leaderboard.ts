@@ -149,7 +149,7 @@ export async function submitScore(
   }
 }
 
-export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
+export async function fetchLeaderboard(limit: number = 100, offset: number = 0): Promise<LeaderboardEntry[]> {
   const supabase = createClient()
 
   try {
@@ -159,7 +159,7 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
       .order("score", { ascending: false })
       .order("time_taken", { ascending: true })
       .order("accuracy", { ascending: false })
-      .limit(100)
+      .range(offset, offset + limit - 1)
 
     if (error) {
       console.error("Error fetching leaderboard:", error)

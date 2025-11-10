@@ -1,15 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import HomeScreen from "./arrow-reflex/home-screen"
 import GameScreen from "./arrow-reflex/game-screen"
 import ScoreScreen from "./arrow-reflex/score-screen"
-import LeaderboardScreen from "./arrow-reflex/leaderboard-screen"
-import { submitScore, fetchLeaderboard, type LeaderboardEntry } from "@/lib/leaderboard"
+import { submitScore } from "@/lib/leaderboard"
 
 type Direction = "up" | "down" | "left" | "right"
-type GameState = "home" | "countdown" | "playing" | "finished" | "leaderboard"
+type GameState = "home" | "countdown" | "playing" | "finished"
 
 export interface GameStats {
   correct: number
@@ -22,32 +22,12 @@ const GAME_DURATION = 30
 const MAX_ARROWS = 50
 
 export default function ArrowReflex() {
+  const router = useRouter()
   const [gameState, setGameState] = useState<GameState>("home")
   const [countdownValue, setCountdownValue] = useState(3)
   const [stats, setStats] = useState<GameStats>({ correct: 0, wrong: 0, timeElapsed: 0 })
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false)
-  const [leaderboardError, setLeaderboardError] = useState<string | null>(null)
   const [isSubmittingScore, setIsSubmittingScore] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-
-  useEffect(() => {
-    loadLeaderboard()
-  }, [])
-
-  const loadLeaderboard = async () => {
-    setIsLoadingLeaderboard(true)
-    setLeaderboardError(null)
-    try {
-      const data = await fetchLeaderboard()
-      setLeaderboard(data)
-    } catch (error) {
-      console.error("Failed to load leaderboard:", error)
-      setLeaderboardError("Failed to load leaderboard. Please try again.")
-    } finally {
-      setIsLoadingLeaderboard(false)
-    }
-  }
 
   useEffect(() => {
     if (gameState !== "countdown") return
@@ -93,9 +73,8 @@ export default function ArrowReflex() {
         stats.wrong, // wrong
       )
       if (result) {
-        // Reload leaderboard after submission
-        await loadLeaderboard()
-        setGameState("leaderboard")
+        // Navigate to leaderboard page after successful submission
+        router.push("/leaderboard")
       } else {
         setSubmitError("Failed to submit score. Please try again.")
       }
@@ -107,14 +86,10 @@ export default function ArrowReflex() {
     }
   }
 
-  const handleViewLeaderboard = async () => {
-    await loadLeaderboard()
-    setGameState("leaderboard")
+  const handleViewLeaderboard = () => {
+    router.push("/leaderboard")
   }
 
-  const handleBackToHome = () => {
-    setGameState("home")
-  }
 
   return (
     <div className="w-full min-h-screen bg-white text-black">
@@ -168,16 +143,6 @@ export default function ArrowReflex() {
             MAX_ARROWS={MAX_ARROWS}
             isSubmitting={isSubmittingScore}
             submitError={submitError}
-          />
-        )}
-        {gameState === "leaderboard" && (
-          <LeaderboardScreen
-            key="leaderboard"
-            leaderboard={leaderboard}
-            isLoading={isLoadingLeaderboard}
-            error={leaderboardError}
-            onPlayAgain={handlePlayAgain}
-            onBackToHome={handleBackToHome}
           />
         )}
       </AnimatePresence>

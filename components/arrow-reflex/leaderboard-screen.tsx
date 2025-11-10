@@ -6,7 +6,10 @@ import type { LeaderboardEntry } from "@/lib/leaderboard"
 interface LeaderboardScreenProps {
   leaderboard: LeaderboardEntry[]
   isLoading?: boolean
+  isLoadingMore?: boolean
   error?: string | null
+  hasMore?: boolean
+  onLoadMore?: () => void
   onPlayAgain: () => void
   onBackToHome: () => void
 }
@@ -14,13 +17,21 @@ interface LeaderboardScreenProps {
 export default function LeaderboardScreen({
   leaderboard,
   isLoading = false,
+  isLoadingMore = false,
   error = null,
+  hasMore = false,
+  onLoadMore,
   onPlayAgain,
   onBackToHome,
 }: LeaderboardScreenProps) {
   const getMedalEmoji = (index: number) => {
     const medals = ["🥇", "🥈", "🥉"]
     return medals[index] || null
+  }
+
+  const getTwitterUrl = (handle: string) => {
+    const cleanHandle = handle.replace(/^@/, "")
+    return `https://twitter.com/${cleanHandle}`
   }
 
   return (
@@ -93,9 +104,14 @@ export default function LeaderboardScreen({
                         }}
                       />
                     )}
-                    <span className="font-medium text-black truncate">
+                    <a
+                      href={getTwitterUrl(entry.handle)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-black truncate hover:text-blue-500 transition-colors cursor-pointer"
+                    >
                       {entry.handle.startsWith('@') ? entry.handle : `@${entry.handle}`}
-                    </span>
+                    </a>
                   </div>
                   <div className="col-span-3 text-center font-bold">{entry.score || entry.arrows}</div>
                   <div className="col-span-3 text-right font-medium text-gray-700">{entry.time_taken || entry.time}s</div>
@@ -104,6 +120,26 @@ export default function LeaderboardScreen({
             </div>
           )}
         </motion.div>
+
+        {/* Load More Button */}
+        {!isLoading && !error && leaderboard.length > 0 && hasMore && onLoadMore && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
+            className="flex justify-center"
+          >
+            <motion.button
+              onClick={onLoadMore}
+              disabled={isLoadingMore}
+              whileHover={{ scale: isLoadingMore ? 1 : 1.02 }}
+              whileTap={{ scale: isLoadingMore ? 1 : 0.98 }}
+              className="bg-gray-100 text-black font-bold py-3 px-8 rounded-lg transition-all hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoadingMore ? "Loading..." : "Load More"}
+            </motion.button>
+          </motion.div>
+        )}
 
         {/* Buttons */}
         <motion.div
